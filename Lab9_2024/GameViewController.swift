@@ -11,6 +11,7 @@ import GameplayKit
 
 class GameViewController: UIViewController {
 
+    var SKLabelNode: String = "0"
     override func viewDidLoad() {
         super.viewDidLoad()
         
