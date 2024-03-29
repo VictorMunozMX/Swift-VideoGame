@@ -46,16 +46,59 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         opponentSprite.physicsBody?.collisionBitMask = spriteCategory1
         self.physicsWorld.contactDelegate = self
         
-        //sprite.categoryBitMask & opponentSprite.contactMask:
     }
+    
+    //    func moveOpponent() {
+    //        let randomX = GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.width))
+    //        let randomY = GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.height))
+    //        let movement = SKAction.move(to: CGPoint(x: randomX, y: randomY), duration: 1)
+    //        opponentSprite.run(movement, completion: { [unowned self] in
+    //            self.moveOpponent()
+    //        })
+    //    }
     
     func moveOpponent() {
         let randomX = GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.width))
-        let randomY = GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.height))
-        let movement = SKAction.move(to: CGPoint(x: randomX, y: randomY), duration: 1)
-        opponentSprite.run(movement, completion: { [unowned self] in
+        let randomY = GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.height + opponentSprite.size.height))
+        
+        // let movement = SKAction.move(to: CGPoint(x: randomX, y: randomY), duration: 5)
+        let moveDownAction = SKAction.moveTo(y: -opponentSprite.size.height, duration: 2)
+        
+        opponentSprite.run(moveDownAction, completion: { [unowned self] in
             self.moveOpponent()
         })
+        
+        let resetPositionAction = SKAction.run {
+            // Nueva posición X aleatoria
+            let newXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.width)))
+            self.opponentSprite.position = CGPoint(x: newXPosition, y: self.size.height + self.opponentSprite.size.height)
+        }
+        
+        let sequenceAction = SKAction.sequence([moveDownAction, resetPositionAction])
+        // Repetir la secuencia indefinidamente
+        opponentSprite.run(SKAction.repeatForever(sequenceAction))
+    }
+    
+    func moveOpponent1() {
+        // Configura la posición inicial del oponente fuera de la pantalla en la parte superior en una posición X aleatoria
+        let randomXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.width)))
+        opponentSprite.position = CGPoint(x: randomXPosition, y: self.size.height + opponentSprite.size.height)
+        
+        // Acción para mover al oponente directamente hacia abajo en el eje Y
+        let moveDownAction = SKAction.moveTo(y: -opponentSprite.size.height, duration: 2)
+        
+        // Acción para "resetear" al oponente en una nueva posición aleatoria en X en la parte superior después de caer
+        let resetPositionAction = SKAction.run {
+            // Nueva posición X aleatoria
+            let newXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.width)))
+            self.opponentSprite.position = CGPoint(x: newXPosition, y: self.size.height + self.opponentSprite.size.height)
+        }
+        
+        // Secuencia: mover hacia abajo y luego resetear la posición
+        let sequenceAction = SKAction.sequence([moveDownAction, resetPositionAction])
+        
+        // Repetir la secuencia indefinidamente
+        opponentSprite.run(SKAction.repeatForever(sequenceAction))
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
