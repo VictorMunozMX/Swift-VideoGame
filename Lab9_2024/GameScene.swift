@@ -16,6 +16,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var score : SKLabelNode!
     var touch : Int = 0
     var collisionOccured: Bool = false
+    var originalPlayerYPosition: CGFloat = 0.0
     
     override func didMove(to view: SKView) {
         opponentSprite = SKSpriteNode(imageNamed: "OpponentSprite")
@@ -23,8 +24,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(opponentSprite)
         
         sprite = SKSpriteNode(imageNamed: "PlayerSprite")
-        sprite.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        sprite.position = CGPoint(x: size.width / 2, y: sprite.size.height / 2 + 40)
         addChild(sprite)
+        originalPlayerYPosition = sprite.position.y + 20
         //sprite.size = CGSize(width: 50, height: 50)
         
         //        let downMovement = SKAction.move(to: CGPoint(x: size.width / 2, y: 0), duration: 1)
@@ -33,6 +35,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         //        opponentSprite.run(SKAction.repeatForever(movement))
         
         score = SKLabelNode(text: "0")
+        score.fontSize = 80
         score.position = CGPoint(x: size.width / 2, y: size.height / 2)
         addChild(score)
         
@@ -40,10 +43,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         opponentSprite.physicsBody = SKPhysicsBody(circleOfRadius: 50)
         
         sprite.physicsBody?.categoryBitMask = spriteCategory1
-        sprite.physicsBody?.contactTestBitMask = spriteCategory2
-        sprite.physicsBody?.collisionBitMask = spriteCategory2
+        sprite.physicsBody?.contactTestBitMask = spriteCategory1
+        sprite.physicsBody?.collisionBitMask = spriteCategory1
         
-        opponentSprite.physicsBody?.categoryBitMask = spriteCategory2
+        opponentSprite.physicsBody?.categoryBitMask = spriteCategory1
         opponentSprite.physicsBody?.contactTestBitMask = spriteCategory1
         opponentSprite.physicsBody?.collisionBitMask = spriteCategory1
         
@@ -78,12 +81,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 self.calculateScore(by: -1)
             }
             self.collisionOccured = false
+            self.sprite.position.y = self.originalPlayerYPosition
         }
         
         // Secuencia: mover hacia abajo y luego resetear la posición
         let sequenceAction = SKAction.sequence([moveDownAction, resetPositionAction,])
         // Repetir la secuencia indefinidamente
         opponentSprite.run(SKAction.repeatForever(sequenceAction))
+        
     }
     
     //    func didBegin(_ contact: SKPhysicsContact) {
@@ -103,8 +108,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     {
         touch += amount
         if touch < 0 {
+            touch = 0
             endGame()
         }
+        score.fontSize = 80
         score.text = "\(touch)"
     }
     
@@ -114,25 +121,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         opponentSprite.removeAllActions()
         sprite.removeAllActions()
         let gameOverLabel = SKLabelNode(text: "Game Over")
-        gameOverLabel.fontSize = 30
+        gameOverLabel.fontSize = 50
         gameOverLabel.fontColor = SKColor.yellow
         gameOverLabel.position = CGPoint(x: self.size.width / 2, y: (self.size.height / 2) + 100)
         addChild(gameOverLabel)
     }
     
     func touchDown(atPoint pos : CGPoint) {
-        sprite.run(SKAction.move(to: pos, duration: 1))
+        //sprite.run(SKAction.move(to: pos, duration: 1))
     }
     
     func touchMoved(toPoint pos : CGPoint) {
     }
     
     func touchUp(atPoint pos : CGPoint) {
-        sprite.run(SKAction.move(to: pos, duration: 1))
+        //sprite.run(SKAction.move(to: pos, duration: 1))
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchDown(atPoint: t.location(in: self)) }
+        if let touch = touches.first {
+            let touchLocation = touch.location(in: self)
+            let newX = touchLocation.x
+            let newY = sprite.position.y
+            let moveAction = SKAction.move(to: CGPoint(x: newX, y: newY), duration: 0.8) // with speed
+            // animation
+            sprite.run(moveAction)
+        }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
