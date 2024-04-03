@@ -15,22 +15,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var opponentSprite: SKSpriteNode!
     var score : SKLabelNode!
     var touch : Int = 0
+    var collisionOccured: Bool = false
     
     override func didMove(to view: SKView) {
         opponentSprite = SKSpriteNode(imageNamed: "OpponentSprite")
         opponentSprite.position = CGPoint(x: size.width / 2, y: size.height)
         addChild(opponentSprite)
         
-        let downMovement = SKAction.move(to: CGPoint(x: size.width / 2, y: 0), duration: 1)
-        let upMovement = SKAction.move(to: CGPoint(x: size.width / 2, y: size.height), duration: 1)
-        let movement = SKAction.sequence([downMovement, upMovement])
-        //opponentSprite.run(SKAction.repeatForever(movement))
-        moveOpponent()
-        
         sprite = SKSpriteNode(imageNamed: "PlayerSprite")
         sprite.position = CGPoint(x: size.width / 2, y: size.height / 2)
         addChild(sprite)
         //sprite.size = CGSize(width: 50, height: 50)
+        
+        //        let downMovement = SKAction.move(to: CGPoint(x: size.width / 2, y: 0), duration: 1)
+        //        let upMovement = SKAction.move(to: CGPoint(x: size.width / 2, y: size.height), duration: 1)
+        //        let movement = SKAction.sequence([downMovement, upMovement])
+        //        opponentSprite.run(SKAction.repeatForever(movement))
         
         score = SKLabelNode(text: "0")
         score.position = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -38,14 +38,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         sprite.physicsBody = SKPhysicsBody(circleOfRadius: 50)
         opponentSprite.physicsBody = SKPhysicsBody(circleOfRadius: 50)
+        
         sprite.physicsBody?.categoryBitMask = spriteCategory1
-        sprite.physicsBody?.contactTestBitMask = spriteCategory1
-        sprite.physicsBody?.collisionBitMask = spriteCategory1
-        opponentSprite.physicsBody?.categoryBitMask = spriteCategory1
+        sprite.physicsBody?.contactTestBitMask = spriteCategory2
+        sprite.physicsBody?.collisionBitMask = spriteCategory2
+        
+        opponentSprite.physicsBody?.categoryBitMask = spriteCategory2
         opponentSprite.physicsBody?.contactTestBitMask = spriteCategory1
         opponentSprite.physicsBody?.collisionBitMask = spriteCategory1
+        
         self.physicsWorld.contactDelegate = self
         
+        moveOpponent()
     }
     
     //    func moveOpponent() {
@@ -58,53 +62,62 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     //    }
     
     func moveOpponent() {
-        let randomX = GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.width))
-        let randomY = GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.height + opponentSprite.size.height))
+        // X random
+        let randomXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.width)))
         
-        // let movement = SKAction.move(to: CGPoint(x: randomX, y: randomY), duration: 5)
-        let moveDownAction = SKAction.moveTo(y: -opponentSprite.size.height, duration: 2)
-        
-        opponentSprite.run(moveDownAction, completion: { [unowned self] in
-            self.moveOpponent()
-        })
-        
-        let resetPositionAction = SKAction.run {
-            // Nueva posición X aleatoria
-            let newXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.width)))
-            self.opponentSprite.position = CGPoint(x: newXPosition, y: self.size.height + self.opponentSprite.size.height)
-        }
-        
-        let sequenceAction = SKAction.sequence([moveDownAction, resetPositionAction])
-        // Repetir la secuencia indefinidamente
-        opponentSprite.run(SKAction.repeatForever(sequenceAction))
-    }
-    
-    func moveOpponent1() {
-        // Configura la posición inicial del oponente fuera de la pantalla en la parte superior en una posición X aleatoria
-        let randomXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(size.width)))
         opponentSprite.position = CGPoint(x: randomXPosition, y: self.size.height + opponentSprite.size.height)
-        
-        // Acción para mover al oponente directamente hacia abajo en el eje Y
+        // move opponent to botom
         let moveDownAction = SKAction.moveTo(y: -opponentSprite.size.height, duration: 2)
         
-        // Acción para "resetear" al oponente en una nueva posición aleatoria en X en la parte superior después de caer
+        // reset new x postiton
         let resetPositionAction = SKAction.run {
-            // Nueva posición X aleatoria
             let newXPosition = CGFloat(GKRandomSource.sharedRandom().nextInt(upperBound: Int(self.size.width)))
             self.opponentSprite.position = CGPoint(x: newXPosition, y: self.size.height + self.opponentSprite.size.height)
+            // change the score
+            if !self.collisionOccured {
+                self.calculateScore(by: -1)
+            }
+            self.collisionOccured = false
         }
         
         // Secuencia: mover hacia abajo y luego resetear la posición
-        let sequenceAction = SKAction.sequence([moveDownAction, resetPositionAction])
-        
+        let sequenceAction = SKAction.sequence([moveDownAction, resetPositionAction,])
         // Repetir la secuencia indefinidamente
         opponentSprite.run(SKAction.repeatForever(sequenceAction))
     }
     
+    //    func didBegin(_ contact: SKPhysicsContact) {
+    //        print("Hit!")
+    //        touch += 1
+    //        score.text = String(touch)
+    //
+    //    }
+    
     func didBegin(_ contact: SKPhysicsContact) {
         print("Hit!")
-        touch += 1
-        score.text = String(touch)
+        self.calculateScore(by: 1)
+        self.collisionOccured = true
+    }
+    
+    func calculateScore(by amount: Int)
+    {
+        touch += amount
+        if touch < 0 {
+            endGame()
+        }
+        score.text = "\(touch)"
+    }
+    
+    func endGame() {
+        print("End")
+        self.removeAllActions()
+        opponentSprite.removeAllActions()
+        sprite.removeAllActions()
+        let gameOverLabel = SKLabelNode(text: "Game Over")
+        gameOverLabel.fontSize = 30
+        gameOverLabel.fontColor = SKColor.yellow
+        gameOverLabel.position = CGPoint(x: self.size.width / 2, y: (self.size.height / 2) + 100)
+        addChild(gameOverLabel)
     }
     
     func touchDown(atPoint pos : CGPoint) {
@@ -138,3 +151,4 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
 }
+
