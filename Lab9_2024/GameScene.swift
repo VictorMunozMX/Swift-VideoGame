@@ -42,6 +42,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         sprite.physicsBody = SKPhysicsBody(circleOfRadius: 50)
         opponentSprite.physicsBody = SKPhysicsBody(circleOfRadius: 50)
         
+        sprite.physicsBody?.isDynamic = false
         sprite.physicsBody?.categoryBitMask = spriteCategory1
         sprite.physicsBody?.contactTestBitMask = spriteCategory1
         sprite.physicsBody?.collisionBitMask = spriteCategory1
@@ -143,7 +144,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let touchLocation = touch.location(in: self)
             let newX = touchLocation.x
             let newY = sprite.position.y
-            let moveAction = SKAction.move(to: CGPoint(x: newX, y: newY), duration: 0.8) // with speed
+            let moveAction = SKAction.move(to: CGPoint(x: newX, y: newY), duration: 0.7) // with speed
             // animation
             sprite.run(moveAction)
         }
